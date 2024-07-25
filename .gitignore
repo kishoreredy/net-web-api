@@ -1,0 +1,6 @@
+
+*.v2
+*.suo
+*.vsidx
+bin
+obj
