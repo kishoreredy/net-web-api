@@ -14,3 +14,5 @@ obj
 /CodeFirstApi/.vs/CodeFirstApi/v17
 /CodeFirstApi/.vs/CodeFirstApi/v17/*
 /CodeFirstApi/bin
+CodeFirstApi/obj/Debug/net8.0/CodeFirstApi.AssemblyInfo.cs
+CodeFirstApi/obj/Debug/net8.0/CodeFirstApi.AssemblyInfoInputs.cache
