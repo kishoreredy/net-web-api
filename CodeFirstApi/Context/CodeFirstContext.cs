@@ -3,10 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CodeFirstApi.Context
 {
-    public class CodeFirstContext : DbContext
+    public class CodeFirstContext(DbContextOptions<CodeFirstContext> options) : DbContext(options)
     {
-        public CodeFirstContext(DbContextOptions<CodeFirstContext> options) : base(options) { }
-        public DbSet<Employee> Users { get; set; }
+        public DbSet<Employee> Employees { get; set; }
         public DbSet<Salary> Salaries { get; set; }
     }
 }

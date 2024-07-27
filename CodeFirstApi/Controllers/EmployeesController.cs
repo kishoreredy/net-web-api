@@ -7,46 +7,41 @@ namespace CodeFirstApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class EmployeesController(CodeFirstContext context) : ControllerBase
     {
-        private readonly CodeFirstContext _context;
-        public UsersController(CodeFirstContext context)
-        {
-            _context = context;
-        }
+        private readonly CodeFirstContext _context = context;
 
-        // GET: api/Users
+        // GET: api/Employees
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
         {
-            return await _context.Users.ToListAsync();
+            return await _context.Employees.ToListAsync();
         }
 
-        // GET: api/Users/5
+        // GET: api/Employees/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
+        public async Task<ActionResult<Employee>> GetEmployee(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var employee = await _context.Employees.FindAsync(id);
 
-            if (user == null)
+            if (employee == null)
             {
                 return NotFound();
             }
 
-            return user;
+            return employee;
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: api/Employees/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        public async Task<IActionResult> PutEmployee(int id, Employee employee)
         {
-            if (id != user.UserId)
+            if (id != employee.EmployeeId)
             {
                 return BadRequest();
             }
 
-            _context.Entry(user).State = EntityState.Modified;
+            _context.Entry(employee).State = EntityState.Modified;
 
             try
             {
@@ -54,7 +49,7 @@ namespace CodeFirstApi.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!UserExists(id))
+                if (!EmployeeExists(id))
                 {
                     return NotFound();
                 }
@@ -67,36 +62,35 @@ namespace CodeFirstApi.Controllers
             return NoContent();
         }
 
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: api/Employees
         [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
+        public async Task<ActionResult<Employee>> PostEmployee(Employee employee)
         {
-            _context.Users.Add(user);
+            _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = user.UserId }, user);
+            return CreatedAtAction("GetEmployee", new { id = employee.EmployeeId }, employee);
         }
 
-        // DELETE: api/Users/5
+        // DELETE: api/Employees/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteEmployee(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            var employee = await _context.Employees.FindAsync(id);
+            if (employee == null)
             {
                 return NotFound();
             }
 
-            _context.Users.Remove(user);
+            _context.Employees.Remove(employee);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool UserExists(int id)
+        private bool EmployeeExists(int id)
         {
-            return _context.Users.Any(e => e.UserId == id);
+            return _context.Employees.Any(e => e.EmployeeId == id);
         }
     }
 }

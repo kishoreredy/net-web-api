@@ -1,5 +1,8 @@
 
 using CodeFirstApi.Context;
+using CodeFirstApi.Context.Sso;
+using CodeFirstApi.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace CodeFirstApi
@@ -12,11 +15,7 @@ namespace CodeFirstApi
 
             // Add services to the container.
 
-            // Add DbContext
-            builder.Services.AddDbContext<CodeFirstContext>(options =>
-            {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("CodeFirstDb"));
-            });
+            ConfigureServices(builder);
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -25,6 +24,23 @@ namespace CodeFirstApi
 
             var app = builder.Build();
 
+            // Add middleware to the container.
+            ConfigureMiddleware(app);
+
+            app.Run();
+        }
+
+        private static void ConfigureServices(WebApplicationBuilder builder)
+        {
+            // Add DbContext
+            ConfigureDatabase(builder);
+
+            // Add Dependency Injection
+            ConfigureIocContainer(builder);
+        }
+
+        private static void ConfigureMiddleware(WebApplication app)
+        {
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -38,8 +54,24 @@ namespace CodeFirstApi
 
 
             app.MapControllers();
+        }
 
-            app.Run();
+        private static void ConfigureDatabase(WebApplicationBuilder builder)
+        {
+            builder.Services.AddDbContext<CodeFirstContext>(options =>
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("CodeFirstDb"));
+            });
+
+            builder.Services.AddDbContext<SsoContext>(options =>
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("CodeFirstDb"));
+            }).AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<SsoContext>();
+        }
+
+        private static void ConfigureIocContainer(WebApplicationBuilder builder)
+        {
+            builder.Services.AddTransient<IRoleService, RoleService>();
         }
     }
 }

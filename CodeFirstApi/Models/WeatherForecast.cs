@@ -1,4 +1,4 @@
-namespace CodeFirstApi
+namespace CodeFirstApi.Models
 {
     public class WeatherForecast
     {
