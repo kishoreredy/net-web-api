@@ -6,3 +6,8 @@ bin
 obj
 /CodeFirstApi/obj
 /CodeFirstApi/bin
+/CodeFirstApi/.vs
+*.v2
+*.vsidx
+*.bin
+/CodeFirstApi/obj
