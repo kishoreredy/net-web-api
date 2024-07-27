@@ -5,6 +5,7 @@ namespace CodeFirstApi.Services
     public interface IRoleService
     {
         Task<bool> AddRole(string role);
+        Task<bool> DeleteRole(string role);
     }
 
     public class RoleService(RoleManager<IdentityRole> roleManager, ILogger<RoleService> logger) : IRoleService
@@ -22,6 +23,18 @@ namespace CodeFirstApi.Services
 
             var identityRole = new IdentityRole(role);
             return (await _roleManager.CreateAsync(identityRole)).Succeeded;
+        }
+
+        public async Task<bool> DeleteRole(string role)
+        {
+            if (await _roleManager.RoleExistsAsync(role))
+            {
+                var identityRole = await _roleManager.FindByNameAsync(role);
+                return (await _roleManager.DeleteAsync(identityRole!)).Succeeded;
+            }
+
+            _logger.LogError("Role does not exist");
+            return false;
         }
     }
 }
