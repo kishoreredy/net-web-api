@@ -4,10 +4,13 @@
 *.vsidx
 bin
 obj
-/CodeFirstApi/obj
-/CodeFirstApi/bin
+/CodeFirstApi/obj/*
+/CodeFirstApi/bin/*
 /CodeFirstApi/.vs
 *.v2
 *.vsidx
 *.bin
 /CodeFirstApi/obj
+/CodeFirstApi/.vs/CodeFirstApi/v17
+/CodeFirstApi/.vs/CodeFirstApi/v17/*
+/CodeFirstApi/bin
