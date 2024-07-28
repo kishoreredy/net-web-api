@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CodeFirstApi.Controllers.Sso
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     [Authorize(Roles = Roles.Admin)]
     public class RolesController(IRoleService roleService) : ControllerBase
@@ -21,10 +21,9 @@ namespace CodeFirstApi.Controllers.Sso
             }
 
             return await _roleService.AddRole(role)
-                ? Ok($"{role} role is added")
-                : BadRequest("Something went wrong");
+                ? Ok($"{role} role is added.")
+                : BadRequest("Something went wrong!");
         }
-
 
         [HttpDelete]
         public async Task<IActionResult> DeleteRole(string role)
@@ -35,8 +34,8 @@ namespace CodeFirstApi.Controllers.Sso
             }
 
             return await _roleService.DeleteRole(role)
-                ? Ok($"{role} role is deleted")
-                : BadRequest("Something went wrong");
+                ? Ok($"{role} role is deleted.")
+                : BadRequest("Something went wrong!");
         }
     }
 }

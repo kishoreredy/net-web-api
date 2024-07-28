@@ -71,7 +71,9 @@ namespace CodeFirstApi
 
         private static void ConfigureIocContainer(WebApplicationBuilder builder)
         {
+            builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddTransient<IRoleService, RoleService>();
+            builder.Services.AddTransient<ITokenService, TokenService>();
         }
     }
 }
