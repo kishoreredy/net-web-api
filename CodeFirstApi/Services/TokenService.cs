@@ -27,7 +27,8 @@ namespace CodeFirstApi.Services
                 [
                     new(ClaimTypes.Email,user.Username),
                     new(ClaimTypes.Expiration,expirationTime.ToString("yyyyMMdd_hhmmss")),
-                    new(ClaimTypes.Role, Roles.Admin)
+                    new(ClaimTypes.Role, Roles.Admin),
+                    new(ClaimTypes.Actor, _config.GetSection("Jwt:Actor").Value!)
                 ];
                 var securityKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_config.GetSection("Jwt:Key").Value!));
                 var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha512Signature);
