@@ -2,8 +2,12 @@
 using CodeFirstApi.Context;
 using CodeFirstApi.Context.Sso;
 using CodeFirstApi.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace CodeFirstApi
 {
@@ -35,6 +39,8 @@ namespace CodeFirstApi
             // Add DbContext
             ConfigureDatabase(builder);
 
+            ConfigureAuthenticationAuthorization(builder);
+
             // Add Dependency Injection
             ConfigureIocContainer(builder);
         }
@@ -49,7 +55,7 @@ namespace CodeFirstApi
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
@@ -67,6 +73,34 @@ namespace CodeFirstApi
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("CodeFirstDb"));
             }).AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<SsoContext>();
+        }
+
+        private static void ConfigureAuthenticationAuthorization(WebApplicationBuilder builder)
+        {
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+                .AddJwtBearer(b =>
+                {
+                    b.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateAudience = true,
+                        ValidateIssuer = true,
+                        ValidateActor = true,
+                        RequireExpirationTime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration.GetSection("Jwt.Issuer").Value,
+                        ValidAudience = builder.Configuration.GetSection("Jwt:Audience").Value,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Key").Value!))
+                    };
+                })
+                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, c =>
+                {
+                    c.ExpireTimeSpan = TimeSpan.FromMinutes(1);
+                    c.SlidingExpiration = true;
+                });
         }
 
         private static void ConfigureIocContainer(WebApplicationBuilder builder)
