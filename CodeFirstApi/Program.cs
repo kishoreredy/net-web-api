@@ -26,6 +26,16 @@ namespace CodeFirstApi
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            builder.Services.AddSession(s =>
+            {
+                s.IOTimeout = TimeSpan.FromMinutes(1);
+                s.IdleTimeout = TimeSpan.FromMinutes(1);
+                //s.Cookie.Expiration = TimeSpan.FromMinutes(10);
+                s.Cookie.HttpOnly = true;
+                s.Cookie.MaxAge = TimeSpan.FromHours(1);
+            });
+            builder.Services.AddDistributedMemoryCache();
+
             var app = builder.Build();
 
             // Add middleware to the container.
@@ -55,6 +65,7 @@ namespace CodeFirstApi
             }
 
             app.UseHttpsRedirection();
+            app.UseSession();
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -72,7 +83,14 @@ namespace CodeFirstApi
             builder.Services.AddDbContext<SsoContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("CodeFirstDb"));
-            }).AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<SsoContext>();
+            }).AddIdentity<IdentityUser, IdentityRole>(i =>
+            {
+                i.Password.RequiredLength = 3;
+                i.Password.RequireUppercase = false;
+                i.Password.RequireLowercase = false;
+                i.Password.RequireNonAlphanumeric = false;
+                i.Password.RequireDigit = false;
+            }).AddEntityFrameworkStores<SsoContext>();
         }
 
         private static void ConfigureAuthenticationAuthorization(WebApplicationBuilder builder)
@@ -96,11 +114,11 @@ namespace CodeFirstApi
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Key").Value!))
                     };
                 })
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, c =>
-                {
-                    c.ExpireTimeSpan = TimeSpan.FromMinutes(1);
-                    c.SlidingExpiration = true;
-                });
+                    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, c =>
+                    {
+                        c.ExpireTimeSpan = TimeSpan.FromMinutes(1);
+                        c.SlidingExpiration = true;
+                    });
         }
 
         private static void ConfigureIocContainer(WebApplicationBuilder builder)
