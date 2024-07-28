@@ -38,6 +38,7 @@ namespace CodeFirstApi.Controllers.Sso
             if (status)
             {
                 string token = _tokenService.GenerateToken(user);
+                HttpContext.Session.SetString(user.Username, token);
                 return Ok($"token: {token}");
             }
 
