@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using CodeFirstApi.Models.Sso;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,5 +47,7 @@ namespace CodeFirstApi.Context.Sso
                 entity.ToTable("UserRoles", _schemaName);
             });
         }
+
+        public DbSet<ExtendedIdentityUser> ExtendedIdentityUsers { get; set; }
     }
 }
