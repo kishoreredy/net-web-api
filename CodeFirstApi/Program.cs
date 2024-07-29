@@ -1,8 +1,7 @@
-
 using CodeFirstApi.Context;
 using CodeFirstApi.Context.Sso;
+using CodeFirstApi.Models.Sso;
 using CodeFirstApi.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +15,12 @@ namespace CodeFirstApi
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", true, reloadOnChange: true);
+
+            builder.Logging.ClearProviders();
+            builder.Logging.AddDebug();
 
             // Add services to the container.
 
@@ -83,14 +88,14 @@ namespace CodeFirstApi
             builder.Services.AddDbContext<SsoContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("CodeFirstDb"));
-            }).AddIdentity<IdentityUser, IdentityRole>(i =>
+            }).AddIdentity<ExtendedIdentityUser, IdentityRole>(i =>
             {
                 i.Password.RequiredLength = 3;
                 i.Password.RequireUppercase = false;
                 i.Password.RequireLowercase = false;
                 i.Password.RequireNonAlphanumeric = false;
                 i.Password.RequireDigit = false;
-            }).AddEntityFrameworkStores<SsoContext>();
+            }).AddEntityFrameworkStores<SsoContext>().AddDefaultTokenProviders();
         }
 
         private static void ConfigureAuthenticationAuthorization(WebApplicationBuilder builder)
@@ -99,8 +104,7 @@ namespace CodeFirstApi
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-                .AddJwtBearer(b =>
+            }).AddJwtBearer(b =>
                 {
                     b.TokenValidationParameters = new TokenValidationParameters
                     {
@@ -109,16 +113,17 @@ namespace CodeFirstApi
                         ValidateActor = true,
                         RequireExpirationTime = true,
                         ValidateIssuerSigningKey = true,
-                        ValidIssuer = builder.Configuration.GetSection("Jwt.Issuer").Value,
+                        ClockSkew =TimeSpan.Zero, // by default, Jwt maintain 5 minutes as expiration time, this will reset that default value to 0.
+                        ValidIssuer = builder.Configuration.GetSection("Jwt:Issuer").Value,
                         ValidAudience = builder.Configuration.GetSection("Jwt:Audience").Value,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Key").Value!))
                     };
-                })
-                    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, c =>
-                    {
-                        c.ExpireTimeSpan = TimeSpan.FromMinutes(1);
-                        c.SlidingExpiration = true;
-                    });
+                });
+            //.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, c =>
+            //{
+            //    c.ExpireTimeSpan = TimeSpan.FromMinutes(1);
+            //    c.SlidingExpiration = true;
+            //});
         }
 
         private static void ConfigureIocContainer(WebApplicationBuilder builder)

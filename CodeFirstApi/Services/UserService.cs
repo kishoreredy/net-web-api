@@ -1,18 +1,22 @@
 ﻿using CodeFirstApi.Models.Sso;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace CodeFirstApi.Services
 {
     public interface IUserService
     {
-        Task<bool> Login(User user);
+        Task<LoginResponse> Login(User user);
         Task<bool> MapRoleToUser(User user, string role);
         Task<bool> Register(User user);
+        Task<LoginResponse> RefreshToken(TokenStrings tokens);
     }
 
-    public class UserService(UserManager<IdentityUser> userManager, ILogger<UserService> logger) : IUserService
+    public class UserService(UserManager<ExtendedIdentityUser> userManager, ITokenService tokenService, ILogger<UserService> logger) : IUserService
     {
-        private readonly UserManager<IdentityUser> _userManager = userManager;
+        private readonly UserManager<ExtendedIdentityUser> _userManager = userManager;
+        private readonly ITokenService _tokenService = tokenService;
         private readonly ILogger<UserService> _logger = logger;
 
         public async Task<bool> Register(User user)
@@ -23,7 +27,7 @@ namespace CodeFirstApi.Services
                 return false;
             }
 
-            var identityUser = new IdentityUser
+            var identityUser = new ExtendedIdentityUser
             {
                 UserName = user.Username,
                 Email = user.Username
@@ -38,22 +42,74 @@ namespace CodeFirstApi.Services
             return false;
         }
 
-        public async Task<bool> Login(User user)
+        public async Task<LoginResponse> Login(User user)
         {
+            var response = new LoginResponse();
             if (user == null)
             {
                 _logger.LogError("Please enter proper data!");
-                return false;
+                return response;
             }
 
             var identityUser = await _userManager.FindByEmailAsync(user.Username);
             if (identityUser == null)
             {
                 _logger.LogError("Unable to find User!");
-                return false;
+                return response;
             }
 
-            return await _userManager.CheckPasswordAsync(identityUser, user.Password);
+            if (await _userManager.CheckPasswordAsync(identityUser, user.Password))
+            {
+                response.IsLoggedIn = true;
+                response.Tokens = new TokenStrings
+                {
+                    JwtTokenString = _tokenService.GenerateJwtTokenString(user.Username),
+                    RefreshTokenString = _tokenService.GenerateRefreshTokenString(user.Username)
+                };
+
+                identityUser.RefreshToken = response.Tokens.RefreshTokenString;
+                identityUser.RefreshTokenExpiry = _tokenService.SetRefreshTokenExpiry();
+
+                var updationResult = await _userManager.UpdateAsync(identityUser);
+                _logger.LogCritical(updationResult.Succeeded ? "Refresh Token Updated" : "Token updatation failed");
+
+                return response;
+            }
+
+            _logger.LogError("Login failed! Password is incorrect!");
+            return response;
+        }
+
+        public async Task<LoginResponse> RefreshToken(TokenStrings tokens)
+        {
+            var response = new LoginResponse();
+            var refreshTokenUsername = _tokenService.GetUsernameFromRefreshToken(tokens.RefreshTokenString);
+            var principal = _tokenService.GetClaimsPrincipalFromJwtToken(tokens.JwtTokenString, out SecurityToken securityToken);
+            var principalIdentityName = principal?.Identity?.Name;
+            if (principalIdentityName == null || !principalIdentityName.Equals(refreshTokenUsername))
+                return response;
+
+            var jwtSecurityToken = (JwtSecurityToken)securityToken;
+            //if(jwtSecurityToken == null || jwtSecurityToken.Claims.Contains(c=>c.)
+
+            var identityUser = await _userManager.FindByNameAsync(principalIdentityName);
+            if (identityUser == null || !refreshTokenUsername.Equals(identityUser.UserName) ||
+                identityUser.RefreshToken != tokens.RefreshTokenString || identityUser.RefreshTokenExpiry < DateTime.UtcNow)
+                return response;
+
+            response.IsLoggedIn = true;
+            response.Tokens = new TokenStrings
+            {
+                JwtTokenString = _tokenService.GenerateJwtTokenString(identityUser.UserName),
+                RefreshTokenString = _tokenService.GenerateRefreshTokenString(identityUser.UserName)
+            };
+
+            identityUser.RefreshToken = response.Tokens.RefreshTokenString;
+            identityUser.RefreshTokenExpiry = _tokenService.SetRefreshTokenExpiry();
+            var updationResult = await _userManager.UpdateAsync(identityUser);
+            _logger.LogCritical(updationResult.Succeeded ? "Refresh Token Updated" : "Token updatation failed");
+
+            return response;
         }
 
         public async Task<bool> MapRoleToUser(User user, string role)

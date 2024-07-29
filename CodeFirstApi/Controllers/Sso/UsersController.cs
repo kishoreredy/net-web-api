@@ -3,15 +3,15 @@ using CodeFirstApi.Models.Sso;
 using CodeFirstApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CodeFirstApi.Controllers.Sso
 {
     [Route("[controller]")]
     [ApiController]
-    public class UsersController(IUserService userService, ITokenService tokenService) : ControllerBase
+    public class UsersController(IUserService userService) : ControllerBase
     {
         private readonly IUserService _userService = userService;
-        private readonly ITokenService _tokenService = tokenService;
 
         [HttpPost("Register")]
         public async Task<IActionResult> Register(User user)
@@ -34,15 +34,28 @@ namespace CodeFirstApi.Controllers.Sso
                 return BadRequest($"State: {ModelState} Validation State: {ModelState.ValidationState}");
             }
 
-            bool status = await _userService.Login(user);
-            if (status)
+            var response = await _userService.Login(user);
+            if (response.IsLoggedIn)
             {
-                string token = _tokenService.GenerateToken(user);
-                HttpContext.Session.SetString(user.Username, token);
-                return Ok($"token: {token}");
+                HttpContext.Session.SetString(user.Username, JsonConvert.SerializeObject(response));
+                return Ok(response);
             }
 
             return BadRequest("Invalid Credentials!");
+        }
+
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshToken(TokenStrings tokens)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest($"State: {ModelState} Validation State: {ModelState.ValidationState}");
+            }
+
+            var response = await _userService.RefreshToken(tokens);
+            return response.IsLoggedIn
+                ? Ok(response)
+                : Unauthorized("Token Invalid! Please login!");
         }
 
         [HttpPost("MapUserToRole")]
