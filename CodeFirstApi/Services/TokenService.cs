@@ -1,6 +1,5 @@
 ﻿using CodeFirstApi.Models.Constants;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -76,7 +75,6 @@ namespace CodeFirstApi.Services
                 };
 
                 var principal = new JwtSecurityTokenHandler().ValidateToken(token, tokenValidationParameters, out securityToken);
-                _logger.LogError(JsonConvert.SerializeObject(securityToken));
 
                 return principal;
             }
