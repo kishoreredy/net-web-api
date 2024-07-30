@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace CodeFirstApi.Services
 {
@@ -82,34 +83,46 @@ namespace CodeFirstApi.Services
 
         public async Task<LoginResponse> RefreshToken(TokenStrings tokens)
         {
-            var response = new LoginResponse();
-            var refreshTokenUsername = _tokenService.GetUsernameFromRefreshToken(tokens.RefreshTokenString);
-            var principal = _tokenService.GetClaimsPrincipalFromJwtToken(tokens.JwtTokenString, out SecurityToken securityToken);
-            var principalIdentityName = principal?.Identity?.Name;
-            if (principalIdentityName == null || !principalIdentityName.Equals(refreshTokenUsername))
-                return response;
-
-            var jwtSecurityToken = (JwtSecurityToken)securityToken;
-            //if(jwtSecurityToken == null || jwtSecurityToken.Claims.Contains(c=>c.)
-
-            var identityUser = await _userManager.FindByNameAsync(principalIdentityName);
-            if (identityUser == null || !refreshTokenUsername.Equals(identityUser.UserName) ||
-                identityUser.RefreshToken != tokens.RefreshTokenString || identityUser.RefreshTokenExpiry < DateTime.UtcNow)
-                return response;
-
-            response.IsLoggedIn = true;
-            response.Tokens = new TokenStrings
+            try
             {
-                JwtTokenString = _tokenService.GenerateJwtTokenString(identityUser.UserName),
-                RefreshTokenString = _tokenService.GenerateRefreshTokenString(identityUser.UserName)
-            };
+                var response = new LoginResponse();
+                var refreshTokenUsername = _tokenService.GetUsernameFromRefreshToken(tokens.RefreshTokenString);
+                var principal = _tokenService.GetClaimsPrincipalFromJwtToken(tokens.JwtTokenString, out SecurityToken securityToken);
+                var principalIdentityName = principal?.Identity?.Name;
+                if (principalIdentityName == null || !principalIdentityName.Equals(refreshTokenUsername))
+                    return response;
 
-            identityUser.RefreshToken = response.Tokens.RefreshTokenString;
-            identityUser.RefreshTokenExpiry = _tokenService.SetRefreshTokenExpiry();
-            var updationResult = await _userManager.UpdateAsync(identityUser);
-            _logger.LogCritical(updationResult.Succeeded ? "Refresh Token Updated" : "Token updatation failed");
+                if (_tokenService.SecurityTokenClaimsValidation(securityToken, refreshTokenUsername))
+                {
 
-            return response;
+                    var identityUser = await _userManager.FindByNameAsync(principalIdentityName);
+                    if (identityUser == null || !refreshTokenUsername.Equals(identityUser.UserName) ||
+                        identityUser.RefreshToken != tokens.RefreshTokenString || identityUser.RefreshTokenExpiry < DateTime.UtcNow)
+                        return response;
+
+                    response.IsLoggedIn = true;
+                    response.Tokens = new TokenStrings
+                    {
+                        JwtTokenString = _tokenService.GenerateJwtTokenString(identityUser.UserName),
+                        RefreshTokenString = _tokenService.GenerateRefreshTokenString(identityUser.UserName)
+                    };
+
+                    identityUser.RefreshToken = response.Tokens.RefreshTokenString;
+                    identityUser.RefreshTokenExpiry = _tokenService.SetRefreshTokenExpiry();
+                    var updationResult = await _userManager.UpdateAsync(identityUser);
+                    _logger.LogCritical(updationResult.Succeeded ? "Refresh Token Updated" : "Token updatation failed");
+
+                    return response;
+                }
+
+                _logger.LogError("Security Token validation failed");
+                return response;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.StackTrace);
+                throw;
+            }
         }
 
         public async Task<bool> MapRoleToUser(User user, string role)
