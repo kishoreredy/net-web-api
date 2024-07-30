@@ -27,7 +27,7 @@ namespace CodeFirstApi.Services
             try
             {
                 var currentTime = DateTime.UtcNow;
-                var expirationTime = DateTime.UtcNow.AddMinutes(5);
+                var expirationTime = DateTime.UtcNow.AddSeconds(Convert.ToInt16(_config.GetSection("TokenExpiration:Jwt").Value));
 
                 IEnumerable<Claim> claims =
                 [
@@ -107,7 +107,7 @@ namespace CodeFirstApi.Services
 
         public DateTime SetRefreshTokenExpiry()
         {
-            return DateTime.UtcNow.AddSeconds(30);
+            return DateTime.UtcNow.AddSeconds(Convert.ToInt16(_config.GetSection("TokenExpiration:Refresh").Value));
         }
 
         public bool SecurityTokenClaimsValidation(SecurityToken securityToken, string username)
