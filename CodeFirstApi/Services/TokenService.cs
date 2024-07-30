@@ -128,6 +128,8 @@ namespace CodeFirstApi.Services
                                 continue;
                             }
                             //result = false;
+                            //break;
+
                             //goto end_foreach;
                             return false;
                         case ClaimTypes.Role:
@@ -136,6 +138,8 @@ namespace CodeFirstApi.Services
                                 continue;
                             }
                             //result = false;
+                            //break;
+
                             //goto end_foreach;
                             return false;
                         case ClaimTypes.Email:
@@ -144,6 +148,8 @@ namespace CodeFirstApi.Services
                                 continue;
                             }
                             //result = false;
+                            //break;
+
                             //goto end_foreach;
                             return false;
                         case ClaimTypes.Expiration:
@@ -153,6 +159,8 @@ namespace CodeFirstApi.Services
                                 continue;
                             }
                             //result = false;
+                            //break;
+
                             //goto end_foreach;
                             return false;
                         case ClaimTypes.Actor:
@@ -161,6 +169,8 @@ namespace CodeFirstApi.Services
                                 continue;
                             }
                             //result = false;
+                            //break;
+
                             //goto end_foreach;
                             return false;
                         default:
