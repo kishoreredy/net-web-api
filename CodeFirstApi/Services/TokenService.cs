@@ -117,7 +117,7 @@ namespace CodeFirstApi.Services
                 var jwtSecurityToken = (JwtSecurityToken)securityToken;
                 if (jwtSecurityToken == null) return false;
 
-                bool result = true;
+                //bool result = true;
                 foreach (var claim in jwtSecurityToken.Claims)
                 {
                     switch (claim.Type)
@@ -127,44 +127,60 @@ namespace CodeFirstApi.Services
                             {
                                 continue;
                             }
-                            result = false;
-                            goto end_foreach;
+                            //result = false;
+                            //break;
+
+                            //goto end_foreach;
+                            return false;
                         case ClaimTypes.Role:
                             if (claim.Value.Equals(Roles.Admin))
                             {
                                 continue;
                             }
-                            result = false;
-                            goto end_foreach;
+                            //result = false;
+                            //break;
+
+                            //goto end_foreach;
+                            return false;
                         case ClaimTypes.Email:
                             if (claim.Value.Equals(username))
                             {
                                 continue;
                             }
-                            result = false;
-                            goto end_foreach;
+                            //result = false;
+                            //break;
+
+                            //goto end_foreach;
+                            return false;
                         case ClaimTypes.Expiration:
                             var expireTime = DateTime.ParseExact(claim.Value, "yyyyMMdd_HHmmss", System.Globalization.CultureInfo.InvariantCulture);
                             if (expireTime > DateTime.UtcNow)
                             {
                                 continue;
                             }
-                            result = false;
-                            goto end_foreach;
+                            //result = false;
+                            //break;
+
+                            //goto end_foreach;
+                            return false;
                         case ClaimTypes.Actor:
                             if (claim.Value.Equals(_config.GetSection("Jwt:Actor").Value))
                             {
                                 continue;
                             }
-                            result = false;
-                            goto end_foreach;
+                            //result = false;
+                            //break;
+
+                            //goto end_foreach;
+                            return false;
                         default:
                             continue;
                     }
-                end_foreach: break; //break in switch block is not exiting the complete foreach loop, so goto is used
+                //end_foreach: break; //break in switch block is not exiting the complete foreach loop, so goto is used
                 }
 
-                return result;
+                //return result;
+                return true;
             }
             catch (InvalidCastException ic)
             {
