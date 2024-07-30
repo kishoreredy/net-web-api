@@ -14,6 +14,7 @@ namespace CodeFirstApi.Services
         ClaimsPrincipal GetClaimsPrincipalFromJwtToken(string token, out SecurityToken securityToken);
         string GetUsernameFromRefreshToken(string token);
         DateTime SetRefreshTokenExpiry();
+        bool SecurityTokenClaimsValidation(SecurityToken securityToken, string username);
     }
 
     public class TokenService(IConfiguration config, ILogger<TokenService> logger) : ITokenService
@@ -26,13 +27,13 @@ namespace CodeFirstApi.Services
             try
             {
                 var currentTime = DateTime.UtcNow;
-                var expirationTime = DateTime.UtcNow.AddMinutes(1);
+                var expirationTime = DateTime.UtcNow.AddMinutes(5);
 
                 IEnumerable<Claim> claims =
                 [
                     new(ClaimTypes.Email,username),
                     new(ClaimTypes.Name, username),
-                    new(ClaimTypes.Expiration,expirationTime.ToString("yyyyMMdd_hhmmss")),
+                    new(ClaimTypes.Expiration,expirationTime.ToString("yyyyMMdd_HHmmss")),
                     new(ClaimTypes.Role, Roles.Admin),
                     new(ClaimTypes.Actor, _config.GetSection("Jwt:Actor").Value!)
                 ];
@@ -41,7 +42,7 @@ namespace CodeFirstApi.Services
                 var securityToken = new JwtSecurityToken
                 (
                     audience: _config.GetSection("Jwt:Audience").Value,
-                    issuer: _config.GetSection("Jwt:Key").Value,
+                    issuer: _config.GetSection("Jwt:Issuer").Value,
                     claims: claims,
                     notBefore: currentTime,
                     expires: expirationTime,
@@ -69,6 +70,7 @@ namespace CodeFirstApi.Services
                     ValidateAudience = true,
                     RequireExpirationTime = true,
                     ValidateIssuerSigningKey = true,
+                    //ClockSkew = TimeSpan.Zero,
                     ValidIssuer = _config.GetSection("Jwt:Issuer").Value,
                     ValidAudience = _config.GetSection("Jwt:Audience").Value,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("Jwt:Key").Value!))
@@ -105,7 +107,75 @@ namespace CodeFirstApi.Services
 
         public DateTime SetRefreshTokenExpiry()
         {
-            return DateTime.UtcNow.AddSeconds(20);
+            return DateTime.UtcNow.AddSeconds(30);
+        }
+
+        public bool SecurityTokenClaimsValidation(SecurityToken securityToken, string username)
+        {
+            try
+            {
+                var jwtSecurityToken = (JwtSecurityToken)securityToken;
+                if (jwtSecurityToken == null) return false;
+
+                bool result = true;
+                foreach (var claim in jwtSecurityToken.Claims)
+                {
+                    switch (claim.Type)
+                    {
+                        case ClaimTypes.Name:
+                            if (claim.Value.Equals(username))
+                            {
+                                continue;
+                            }
+                            result = false;
+                            goto end_foreach;
+                        case ClaimTypes.Role:
+                            if (claim.Value.Equals(Roles.Admin))
+                            {
+                                continue;
+                            }
+                            result = false;
+                            goto end_foreach;
+                        case ClaimTypes.Email:
+                            if (claim.Value.Equals(username))
+                            {
+                                continue;
+                            }
+                            result = false;
+                            goto end_foreach;
+                        case ClaimTypes.Expiration:
+                            var expireTime = DateTime.ParseExact(claim.Value, "yyyyMMdd_HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+                            if (expireTime > DateTime.UtcNow)
+                            {
+                                continue;
+                            }
+                            result = false;
+                            goto end_foreach;
+                        case ClaimTypes.Actor:
+                            if (claim.Value.Equals(_config.GetSection("Jwt:Actor").Value))
+                            {
+                                continue;
+                            }
+                            result = false;
+                            goto end_foreach;
+                        default:
+                            continue;
+                    }
+                end_foreach: break; //break in switch block is not exiting the complete foreach loop, so goto is used
+                }
+
+                return result;
+            }
+            catch (InvalidCastException ic)
+            {
+                _logger.LogError(ic.StackTrace);
+                throw;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.StackTrace);
+                throw;
+            }
         }
     }
 }
