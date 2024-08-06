@@ -3,7 +3,6 @@ using CodeFirstApi.Models.Sso;
 using CodeFirstApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace CodeFirstApi.Controllers.Sso
 {
@@ -37,7 +36,7 @@ namespace CodeFirstApi.Controllers.Sso
             var response = await _userService.Login(user);
             if (response.IsLoggedIn)
             {
-                HttpContext.Session.SetString(user.Username, JsonConvert.SerializeObject(response));
+                HttpContext.Session.SetString(user.Username, System.Text.Json.JsonSerializer.Serialize(response));
                 return Ok(response);
             }
 
