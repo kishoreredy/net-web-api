@@ -7,13 +7,15 @@ namespace CodeFirstApi.Models
     [Keyless]
     public class Salary
     {
-        public int EmployeeId { get; set; }
+        public long EmployeeId { get; set; }
         
         public double Ctc {  get; set; }
 
         public Department Department { get; set; }
 
         public EmployeeType EmployeeType { get; set; }
+
+        public double AnnualBonus { get; set; }
 
 
         [ForeignKey("EmployeeId")]
