@@ -1,5 +1,6 @@
 using CodeFirstApi.Context;
 using CodeFirstApi.Context.Sso;
+using CodeFirstApi.Middleware;
 using CodeFirstApi.Models.Sso;
 using CodeFirstApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -58,6 +59,14 @@ namespace CodeFirstApi
 
             // Add Dependency Injection
             ConfigureIocContainer(builder);
+
+            // Add Custom Middleware that implemented IMiddleware interface
+            AddCustomMiddleware(builder);
+        }
+
+        private static void AddCustomMiddleware(WebApplicationBuilder builder)
+        {
+            builder.Services.AddTransient<CustomInterfaceMiddleware>();
         }
 
         private static void ConfigureMiddleware(WebApplication app)
@@ -70,6 +79,8 @@ namespace CodeFirstApi
             }
 
             app.UseHttpsRedirection();
+            app.UseMiddleware<CustomMiddlewareWithoutInterface>();
+            app.UseMiddleware<CustomInterfaceMiddleware>();
             app.UseSession();
             app.UseAuthentication();
             app.UseAuthorization();
